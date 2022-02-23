@@ -22,7 +22,6 @@ import org.json.JSONObject;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
-import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLConnection;
 import java.text.SimpleDateFormat;
@@ -86,6 +85,16 @@ public class MainActivity extends AppCompatActivity {
         });
 
         run.setOnClickListener(view -> {
+            if (zipC.isEmpty()) {
+                city.setText("Please enter a zip code!");
+                lat.setText("");
+                longit.setText("");
+                weath.setText("");
+                weath2.setText("");
+                weath3.setText("");
+                weath4.setText("");
+                return;
+            }
             AsyncTaskDownloadClassThing asyncTask = new AsyncTaskDownloadClassThing();
             asyncTask.execute();
 
