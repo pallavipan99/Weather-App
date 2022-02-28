@@ -54,7 +54,7 @@ public class MainActivity extends AppCompatActivity {
 
         zipCode = findViewById(R.id.editTextNumberPassword);
         run = findViewById(R.id.location);
-        toggleUnit = findViewById(R.id.toggleUnit); // new button for Celsius/Fahrenheit
+        toggleUnit = findViewById(R.id.toggleUnit);
         lat = findViewById(R.id.Latitude);
         longit = findViewById(R.id.Longitude);
         city = findViewById(R.id.City);
@@ -85,16 +85,6 @@ public class MainActivity extends AppCompatActivity {
         });
 
         run.setOnClickListener(view -> {
-            if (zipC.isEmpty()) {
-                city.setText("Please enter a zip code!");
-                lat.setText("");
-                longit.setText("");
-                weath.setText("");
-                weath2.setText("");
-                weath3.setText("");
-                weath4.setText("");
-                return;
-            }
             AsyncTaskDownloadClassThing asyncTask = new AsyncTaskDownloadClassThing();
             asyncTask.execute();
 
@@ -106,8 +96,10 @@ public class MainActivity extends AppCompatActivity {
 
         toggleUnit.setOnClickListener(view -> {
             useCelsius = !useCelsius;
-            AsyncTaskDownloadClassThing2 asyncTask2 = new AsyncTaskDownloadClassThing2();
-            asyncTask2.execute();
+            if (!(latitude.equals("") && longitude.equals(""))) {
+                AsyncTaskDownloadClassThing2 asyncTask2 = new AsyncTaskDownloadClassThing2();
+                asyncTask2.execute();
+            }
         });
     }
 
@@ -115,7 +107,6 @@ public class MainActivity extends AppCompatActivity {
         @Override
         protected Void doInBackground(Void... voids) {
             key = String.valueOf(zipCode.getEditableText());
-
             try {
                 URL weatherKey = new URL("https://api.openweathermap.org/geo/1.0/zip?zip=" + zipC + ",us&appid=dfb78e5904fad1458c4311b74909d54f");
                 URLConnection keyConn = weatherKey.openConnection();
@@ -152,7 +143,8 @@ public class MainActivity extends AppCompatActivity {
         @Override
         protected Void doInBackground(Void... voids) {
             try {
-                URL secondWeatherKey = new URL("https://api.openweathermap.org/data/2.5/onecall?lat=" + lati + "&lon=" + longi + "&exclude=daily,minutely,alerts,current&units=imperial&appid=dfb78e5904fad1458c4311b74909d54f");
+                String units = useCelsius ? "metric" : "imperial";
+                URL secondWeatherKey = new URL("https://api.openweathermap.org/data/2.5/onecall?lat=" + lati + "&lon=" + longi + "&exclude=daily,minutely,alerts,current&units=" + units + "&appid=dfb78e5904fad1458c4311b74909d54f");
                 URLConnection fin = secondWeatherKey.openConnection();
                 BufferedReader read = new BufferedReader(new InputStreamReader(fin.getInputStream()));
                 String weather = "", data2 = read.readLine();
@@ -165,18 +157,17 @@ public class MainActivity extends AppCompatActivity {
 
                 JSONObject currentWeather = new JSONObject(secString);
                 JSONArray array = new JSONArray(currentWeather.getString("hourly"));
+                arr = new JSONArray();
 
-                for (int i = 0; i < array.length(); i++) {
+                for (int i = 0; i < array.length() && i < 12; i++) { // only show first 4 hours
                     SimpleDateFormat date = new SimpleDateFormat("hh:mm a");
                     java.util.Date time = new java.util.Date((long) Integer.parseInt(array.getJSONObject(i).getString("dt")) * 1000);
                     String ti = date.format(time);
 
-                    double tempF = Double.parseDouble(array.getJSONObject(i).getString("temp"));
-                    double temp = useCelsius ? (tempF - 32) * 5 / 9 : tempF;
-
+                    double temp = array.getJSONObject(i).getDouble("temp");
                     arr.put(ti);
                     arr.put(String.format("%.1f", temp));
-                    JSONArray weatherW = new JSONArray(array.getJSONObject(i).getString("weather"));
+                    JSONArray weatherW = array.getJSONObject(i).getJSONArray("weather");
                     arr.put(weatherW.getJSONObject(0).getString("description"));
                 }
 
@@ -186,7 +177,7 @@ public class MainActivity extends AppCompatActivity {
                     weath3.setText("Time: " + arr.get(6) + " | Temp: " + arr.get(7) + "°" + (useCelsius ? "C" : "F") + " | " + arr.get(8));
                     weath4.setText("Time: " + arr.get(9) + " | Temp: " + arr.get(10) + "°" + (useCelsius ? "C" : "F") + " | " + arr.get(11));
 
-                    // Set images
+                    // Set icons
                     setWeatherIcon(arr.get(2).toString(), imag);
                     setWeatherIcon(arr.get(5).toString(), imag2);
                     setWeatherIcon(arr.get(8).toString(), imag3);
